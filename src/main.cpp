@@ -138,7 +138,7 @@ void loop() {
     Serial.println("Wi-Fi desconectado!");
   }
 
-  delay(10000); // Esperar 60 segundos antes de enviar novamente
+  delay(30000); // Esperar 60 segundos antes de enviar novamente
 }
 
 // Implementações das funções
