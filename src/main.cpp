@@ -16,7 +16,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define DIGITAL_PIN D1  // Pino digital como simulação para o outro sensor
 
 // Escolha do sensor no ANALOG_PIN (1 para MQ, 0 para Ruído)
-#define SENSOR_ANALOG_IS_MQ 1 // Altere para 0 se o ANALOG_PIN for para Ruído
+#define SENSOR_ANALOG_IS_MQ 0 // Altere para 0 se o ANALOG_PIN for para Ruído
 
 // Configuração dos limites dos sensores
 #define TEMP_MIN 18
@@ -138,7 +138,7 @@ void loop() {
     Serial.println("Wi-Fi desconectado!");
   }
 
-  delay(30000); // Esperar 60 segundos antes de enviar novamente
+  delay(20000); // Esperar 60 segundos antes de enviar novamente
 }
 
 // Implementações das funções
