@@ -6,50 +6,39 @@
 #include <DHT.h>
 #include <DHT_U.h>
 
-// Configuração do DHT22
+// ============================ CONFIGURAÇÕES DO USUÁRIO ============================
+
+// Configuração Wi-Fi
+const char* ssid = "Desktop_F2925018";  // Nome da rede Wi-Fi
+const char* password = "jr010203";      // Senha da rede Wi-Fi
+
+// Configuração do servidor
+const char* serverName = "http://104.154.230.185:3000/api/sensors"; // URL do servidor
+
+// Configuração dos sensores
 #define DHTPIN D2       // Pino conectado ao DHT22
 #define DHTTYPE DHT22   // Modelo do sensor
-DHT dht(DHTPIN, DHTTYPE);
-
-// Configuração do MQ e Ruído
 #define ANALOG_PIN A0   // Pino analógico para MQ ou Ruído
 #define DIGITAL_PIN D1  // Pino digital como simulação para o outro sensor
 
 // Escolha do sensor no ANALOG_PIN (1 para MQ, 0 para Ruído)
 #define SENSOR_ANALOG_IS_MQ 0 // Altere para 0 se o ANALOG_PIN for para Ruído
 
-// Configuração dos limites dos sensores
-#define TEMP_MIN 18
-#define TEMP_MAX 28
-#define HUMIDITY_MIN 483
-#define HUMIDITY_MAX 640
-#define CO_MIN 0
-#define CO_MAX 1000
-#define NOISE_MIN 0
-#define NOISE_MAX 100
-
-// Configuração Wi-Fi
-const char* ssid = "Desktop_F2925018";  // Nome da rede Wi-Fi
-const char* password = "jr010203";      // Senha da rede Wi-Fi
-
-// Servidor
-const char* serverName = "http://34.42.152.3:3000/api/sensors"; // Atualizado para o IP da VM
-
 // Configuração do LED interno
 #define LED_BUILTIN D4 // LED interno do ESP8266
 
-// Configuração do NTP
+// ============================ FIM DAS CONFIGURAÇÕES ============================
+
+DHT dht(DHTPIN, DHTTYPE);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // Sincronizar com UTC a cada 60s
-
 WiFiClient wifiClient; // Cliente WiFi necessário para HTTPClient
 
 // Declaração das funções
-float testarDHT22Temp();
-float testarDHT22Humidity();
-float testarAnalogSensor();
-float testarDigitalSensor();
-String getEpochTime();
+float lerTemperaturaDHT22();
+float lerUmidadeDHT22();
+float lerSensorAnalogico();
+String obterTempoEpoch();
 
 void setup() {
   Serial.begin(115200);
@@ -93,16 +82,16 @@ void loop() {
   timeClient.update();
 
   // Ler os sensores
-  float temperature = testarDHT22Temp();       // Tenta obter temperatura
-  float humidity = testarDHT22Humidity();     // Tenta obter umidade
-  float analogValue = testarAnalogSensor();   // Ler o sensor no pino A0
+  float temperature = lerTemperaturaDHT22();       // Ler temperatura
+  float humidity = lerUmidadeDHT22();             // Ler umidade
+  float analogValue = lerSensorAnalogico();       // Ler o sensor no pino A0
 
   // Se o sensor analógico for MQ, "ruído" é null; caso contrário, "CO" é null
   String coValue = SENSOR_ANALOG_IS_MQ ? String(analogValue) : "null";
   String noiseValue = SENSOR_ANALOG_IS_MQ ? "null" : String(analogValue);
 
   // Obter horário no formato Epoch
-  String epochTime = getEpochTime();
+  String epochTime = obterTempoEpoch();
 
   // Formatar os dados no JSON
   String payload = "{";
@@ -138,37 +127,37 @@ void loop() {
     Serial.println("Wi-Fi desconectado!");
   }
 
-  delay(20000); // Esperar 60 segundos antes de enviar novamente
+  delay(20000); // Esperar 20 segundos antes de enviar novamente
 }
 
 // Implementações das funções
-float testarDHT22Temp() {
+float lerTemperaturaDHT22() {
   float temperature = dht.readTemperature();
   if (isnan(temperature)) {
     Serial.println("Erro ao ler temperatura do DHT22!");
     return NAN;
   }
-  return constrain(temperature, TEMP_MIN, TEMP_MAX);
+  return temperature;
 }
 
-float testarDHT22Humidity() {
+float lerUmidadeDHT22() {
   float humidity = dht.readHumidity();
   if (isnan(humidity)) {
     Serial.println("Erro ao ler umidade do DHT22!");
     return NAN;
   }
-  return constrain(humidity, HUMIDITY_MIN, HUMIDITY_MAX);
+  return humidity;
 }
 
-float testarAnalogSensor() {
+float lerSensorAnalogico() {
   int analogValue = analogRead(ANALOG_PIN);
   if (SENSOR_ANALOG_IS_MQ) {
-    return map(analogValue, 0, 1023, CO_MIN, CO_MAX); // Mapear valores para MQ
+    return map(analogValue, 0, 1023, 0, 1000); // Mapear valores para MQ
   } else {
-    return map(analogValue, 0, 1023, NOISE_MIN, NOISE_MAX); // Mapear valores para Ruído
+    return map(analogValue, 0, 1023, 0, 100); // Mapear valores para Ruído
   }
 }
 
-String getEpochTime() {
+String obterTempoEpoch() {
   return String(timeClient.getEpochTime());
 }
