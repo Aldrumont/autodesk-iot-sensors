@@ -1,6 +1,6 @@
 #include <Adafruit_Sensor.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 #include <DHT.h>
@@ -16,16 +16,16 @@ const char* password = "jr010203";      // Senha da rede Wi-Fi
 const char* serverName = "http://104.154.230.185:3000/api/sensors"; // URL do servidor
 
 // Configuração dos sensores
-#define DHTPIN D2       // Pino conectado ao DHT22
-#define DHTTYPE DHT22   // Modelo do sensor
-#define ANALOG_PIN A0   // Pino analógico para MQ ou Ruído
-#define DIGITAL_PIN D1  // Pino digital como simulação para o outro sensor
-
-// Escolha do sensor no ANALOG_PIN (1 para MQ, 0 para Ruído)
-#define SENSOR_ANALOG_IS_MQ 0 // Altere para 0 se o ANALOG_PIN for para Ruído
+#define DHTPIN 35      // GPIO conectado ao DHT22
+#define DHTTYPE DHT22  // Modelo do sensor
+#define MQ_PIN 33      // GPIO para o sensor MQ
+#define NOISE_PIN 32   // GPIO para o sensor de ruído
 
 // Configuração do LED interno
-#define LED_BUILTIN D4 // LED interno do ESP8266
+#define LED_BUILTIN 2  // LED interno do ESP32 (GPIO2)
+
+// Intervalo entre as leituras (em milissegundos)
+const unsigned long interval = 20000;
 
 // ============================ FIM DAS CONFIGURAÇÕES ============================
 
@@ -37,7 +37,7 @@ WiFiClient wifiClient; // Cliente WiFi necessário para HTTPClient
 // Declaração das funções
 float lerTemperaturaDHT22();
 float lerUmidadeDHT22();
-float lerSensorAnalogico();
+float lerSensorAnalogico(int pin);
 String obterTempoEpoch();
 
 void setup() {
@@ -48,10 +48,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // LED apagado inicialmente
 
-  // Configuração de pino digital como simulação
-  pinMode(DIGITAL_PIN, INPUT);
-
-  // Inicializar o DHT22
+  // Inicializar o DHT22 (sem configurar GPIO35 como saída)
   dht.begin();
   delay(2000); // Aguarda estabilização do sensor
 
@@ -84,11 +81,8 @@ void loop() {
   // Ler os sensores
   float temperature = lerTemperaturaDHT22();       // Ler temperatura
   float humidity = lerUmidadeDHT22();             // Ler umidade
-  float analogValue = lerSensorAnalogico();       // Ler o sensor no pino A0
-
-  // Se o sensor analógico for MQ, "ruído" é null; caso contrário, "CO" é null
-  String coValue = SENSOR_ANALOG_IS_MQ ? String(analogValue) : "null";
-  String noiseValue = SENSOR_ANALOG_IS_MQ ? "null" : String(analogValue);
+  float mqValue = lerSensorAnalogico(MQ_PIN);     // Ler o sensor MQ
+  float noiseValue = lerSensorAnalogico(NOISE_PIN); // Ler o sensor de ruído
 
   // Obter horário no formato Epoch
   String epochTime = obterTempoEpoch();
@@ -98,8 +92,8 @@ void loop() {
   payload += "\"time\": \"" + epochTime + "\",";
   payload += "\"temp\": " + (isnan(temperature) ? "null" : String(temperature)) + ",";
   payload += "\"umidade\": " + (isnan(humidity) ? "null" : String(humidity)) + ",";
-  payload += "\"co\": " + coValue + ",";
-  payload += "\"ruido\": " + noiseValue;
+  payload += "\"co\": " + String(mqValue) + ",";
+  payload += "\"ruido\": " + String(noiseValue);
   payload += "}";
 
   Serial.print("JSON Enviado: ");
@@ -127,7 +121,7 @@ void loop() {
     Serial.println("Wi-Fi desconectado!");
   }
 
-  delay(20000); // Esperar 20 segundos antes de enviar novamente
+  delay(interval); // Esperar o intervalo definido antes de enviar novamente
 }
 
 // Implementações das funções
@@ -149,12 +143,12 @@ float lerUmidadeDHT22() {
   return humidity;
 }
 
-float lerSensorAnalogico() {
-  int analogValue = analogRead(ANALOG_PIN);
-  if (SENSOR_ANALOG_IS_MQ) {
-    return map(analogValue, 0, 1023, 0, 1000); // Mapear valores para MQ
+float lerSensorAnalogico(int pin) {
+  int analogValue = analogRead(pin);
+  if (pin == MQ_PIN) {
+    return map(analogValue, 0, 4095, 0, 1000); // Mapear valores para MQ
   } else {
-    return map(analogValue, 0, 1023, 0, 100); // Mapear valores para Ruído
+    return map(analogValue, 0, 4095, 0, 100); // Mapear valores para Ruído
   }
 }
 
