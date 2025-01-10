@@ -16,7 +16,7 @@ const char* password = "jr010203";      // Senha da rede Wi-Fi
 const char* serverName = "http://104.154.230.185:3000/api/sensors"; // URL do servidor
 
 // Configuração dos sensores
-#define DHTPIN 35      // GPIO conectado ao DHT22
+#define DHTPIN 4      // GPIO conectado ao DHT22
 #define DHTTYPE DHT22  // Modelo do sensor
 #define MQ_PIN 33      // GPIO para o sensor MQ
 #define NOISE_PIN 32   // GPIO para o sensor de ruído
@@ -25,7 +25,7 @@ const char* serverName = "http://104.154.230.185:3000/api/sensors"; // URL do se
 #define LED_BUILTIN 2  // LED interno do ESP32 (GPIO2)
 
 // Intervalo entre as leituras (em milissegundos)
-const unsigned long interval = 20000;
+const unsigned long interval = 2000;
 
 // ============================ FIM DAS CONFIGURAÇÕES ============================
 
