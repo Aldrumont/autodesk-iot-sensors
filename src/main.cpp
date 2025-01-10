@@ -25,7 +25,7 @@ const char* serverName = "http://104.154.230.185:3000/api/sensors"; // URL do se
 #define LED_BUILTIN 2  // LED interno do ESP32 (GPIO2)
 
 // Intervalo entre as leituras (em milissegundos)
-const unsigned long interval = 2000;
+const unsigned long interval = 20000;
 
 // ============================ FIM DAS CONFIGURAÇÕES ============================
 
